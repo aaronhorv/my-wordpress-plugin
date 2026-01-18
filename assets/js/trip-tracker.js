@@ -12,13 +12,17 @@
         updateIntervals: {},
 
         init: function() {
+            const self = this;
+
             if (typeof mapboxgl === 'undefined') {
                 console.error('Mapbox GL JS not loaded');
+                self.showError('Map library failed to load. Please refresh the page.');
                 return;
             }
 
-            if (!tripTrackerSettings.mapboxToken) {
+            if (!tripTrackerSettings || !tripTrackerSettings.mapboxToken) {
                 console.error('Mapbox token not configured');
+                self.showError('Map not configured. Please set up Mapbox in Trip Tracker settings.');
                 return;
             }
 
@@ -35,6 +39,12 @@
             });
         },
 
+        showError: function(message) {
+            $('.trip-tracker-map').each(function() {
+                $(this).html('<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f5f5f5; color: #666; text-align: center; padding: 20px;">' + message + '</div>');
+            });
+        },
+
         initSingleTripMap: function(container) {
             const $container = $(container);
             const mapId = $container.attr('id');
@@ -45,14 +55,25 @@
             const photos = $container.data('photos') || [];
 
             // Create map
-            const map = new mapboxgl.Map({
-                container: mapId,
-                style: tripTrackerSettings.mapboxStyle,
-                center: [0, 0],
-                zoom: 2
-            });
+            let map;
+            try {
+                map = new mapboxgl.Map({
+                    container: mapId,
+                    style: tripTrackerSettings.mapboxStyle || 'mapbox://styles/mapbox/outdoors-v12',
+                    center: [0, 0],
+                    zoom: 2
+                });
+            } catch (e) {
+                console.error('Error creating map:', e);
+                $container.html('<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f5f5f5; color: #666; text-align: center; padding: 20px;">Error loading map. Check your Mapbox configuration.</div>');
+                return;
+            }
 
             this.maps[tripId] = map;
+
+            map.on('error', function(e) {
+                console.error('Mapbox error:', e);
+            });
 
             map.on('load', function() {
                 // Load route

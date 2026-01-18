@@ -13,6 +13,24 @@ class Trip_Tracker_Shortcodes {
         add_shortcode( 'trip_map', array( $this, 'render_trip_map' ) );
         add_shortcode( 'trip_map_all', array( $this, 'render_all_trips_map' ) );
         add_shortcode( 'trip_list', array( $this, 'render_trip_list' ) );
+
+        // Auto-add map to single trip posts
+        add_filter( 'the_content', array( $this, 'auto_add_map_to_trip' ) );
+    }
+
+    /**
+     * Automatically add map to single trip post content.
+     */
+    public function auto_add_map_to_trip( $content ) {
+        if ( ! is_singular( 'trip' ) || ! in_the_loop() || ! is_main_query() ) {
+            return $content;
+        }
+
+        $trip_id = get_the_ID();
+        $map_html = $this->render_trip_map( array( 'id' => $trip_id ) );
+
+        // Add map before the content
+        return $map_html . $content;
     }
 
     /**
