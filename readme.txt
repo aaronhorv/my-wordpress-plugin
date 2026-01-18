@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,15 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.1.0 =
+* Fixed Traccar API integration - now uses correct endpoint for historical routes
+* Added support for Basic authentication (username:password)
+* Auto-inject map on single trip pages
+* Added debug endpoint for troubleshooting API issues
+* Added route refresh functionality
+* Cache clears automatically when trip dates change
+* Better error messages when Mapbox isn't configured
 
 = 1.0.0 =
 * Initial release
