@@ -58,6 +58,38 @@ class Trip_Tracker_REST_API {
                 ),
             ),
         ) );
+
+        // Debug endpoint (admin only)
+        register_rest_route( 'trip-tracker/v1', '/debug/(?P<trip_id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array( $this, 'get_debug_info' ),
+            'permission_callback' => function() {
+                return current_user_can( 'manage_options' );
+            },
+            'args' => array(
+                'trip_id' => array(
+                    'validate_callback' => function( $param ) {
+                        return is_numeric( $param );
+                    },
+                ),
+            ),
+        ) );
+
+        // Refresh route cache endpoint (admin only)
+        register_rest_route( 'trip-tracker/v1', '/refresh/(?P<trip_id>\d+)', array(
+            'methods' => 'POST',
+            'callback' => array( $this, 'refresh_route' ),
+            'permission_callback' => function() {
+                return current_user_can( 'edit_posts' );
+            },
+            'args' => array(
+                'trip_id' => array(
+                    'validate_callback' => function( $param ) {
+                        return is_numeric( $param );
+                    },
+                ),
+            ),
+        ) );
     }
 
     /**
@@ -238,5 +270,83 @@ class Trip_Tracker_REST_API {
         $stats = Trip_Tracker_Statistics::get_trip_stats( $trip_id );
 
         return new WP_REST_Response( $stats, 200 );
+    }
+
+    /**
+     * Get debug info for troubleshooting (admin only).
+     */
+    public function get_debug_info( $request ) {
+        $trip_id = $request->get_param( 'trip_id' );
+
+        $traccar = new Trip_Tracker_Traccar_API();
+        $api_debug = $traccar->get_debug_info();
+
+        // Get trip meta
+        $trip_meta = array(
+            'status' => get_post_meta( $trip_id, '_trip_status', true ),
+            'start_date' => get_post_meta( $trip_id, '_trip_start_date', true ),
+            'end_date' => get_post_meta( $trip_id, '_trip_end_date', true ),
+            'route_cache_exists' => ! empty( get_post_meta( $trip_id, '_trip_route_cache', true ) ),
+            'route_cache_time' => get_post_meta( $trip_id, '_trip_route_cache_time', true ),
+        );
+
+        // Test current position
+        $position_result = $traccar->get_current_position();
+        $position_debug = is_wp_error( $position_result )
+            ? array( 'error' => $position_result->get_error_message() )
+            : array( 'success' => true, 'data' => $position_result );
+
+        // Test route fetch
+        $start = $trip_meta['start_date'] ?: date( 'Y-m-d\TH:i:s', strtotime( '-1 day' ) );
+        $end = $trip_meta['end_date'] ?: date( 'Y-m-d\TH:i:s' );
+        $route_result = $traccar->get_positions( $start, $end );
+        $route_debug = is_wp_error( $route_result )
+            ? array( 'error' => $route_result->get_error_message() )
+            : array( 'success' => true, 'points' => count( $route_result ) );
+
+        // Test connection
+        $connection_result = $traccar->test_connection();
+        $connection_debug = is_wp_error( $connection_result )
+            ? array( 'error' => $connection_result->get_error_message() )
+            : array( 'success' => true );
+
+        return new WP_REST_Response( array(
+            'api_config' => $api_debug,
+            'trip_meta' => $trip_meta,
+            'connection_test' => $connection_debug,
+            'position_test' => $position_debug,
+            'route_test' => $route_debug,
+        ), 200 );
+    }
+
+    /**
+     * Refresh route cache for a trip (admin only).
+     */
+    public function refresh_route( $request ) {
+        $trip_id = $request->get_param( 'trip_id' );
+
+        $traccar = new Trip_Tracker_Traccar_API();
+
+        // Clear cache
+        $traccar->clear_route_cache( $trip_id );
+
+        // Fetch fresh data
+        $route = $traccar->get_trip_route( $trip_id );
+
+        if ( is_wp_error( $route ) ) {
+            return new WP_REST_Response( array(
+                'success' => false,
+                'error' => $route->get_error_message(),
+            ), 500 );
+        }
+
+        // Recalculate stats
+        Trip_Tracker_Statistics::calculate_trip_stats( $trip_id );
+
+        return new WP_REST_Response( array(
+            'success' => true,
+            'points' => count( $route ),
+            'message' => sprintf( __( 'Route refreshed with %d points.', 'trip-tracker' ), count( $route ) ),
+        ), 200 );
     }
 }

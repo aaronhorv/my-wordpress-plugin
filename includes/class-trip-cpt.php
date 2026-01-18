@@ -214,12 +214,35 @@ class Trip_Tracker_CPT {
             update_post_meta( $post_id, '_trip_status', $new_status );
         }
 
+        // Track if dates changed to clear cache
+        $old_start = get_post_meta( $post_id, '_trip_start_date', true );
+        $old_end = get_post_meta( $post_id, '_trip_end_date', true );
+        $dates_changed = false;
+
         if ( isset( $_POST['trip_start_date'] ) ) {
-            update_post_meta( $post_id, '_trip_start_date', sanitize_text_field( $_POST['trip_start_date'] ) );
+            $new_start = sanitize_text_field( $_POST['trip_start_date'] );
+            if ( $new_start !== $old_start ) {
+                $dates_changed = true;
+            }
+            update_post_meta( $post_id, '_trip_start_date', $new_start );
         }
 
         if ( isset( $_POST['trip_end_date'] ) ) {
-            update_post_meta( $post_id, '_trip_end_date', sanitize_text_field( $_POST['trip_end_date'] ) );
+            $new_end = sanitize_text_field( $_POST['trip_end_date'] );
+            if ( $new_end !== $old_end ) {
+                $dates_changed = true;
+            }
+            update_post_meta( $post_id, '_trip_end_date', $new_end );
+        }
+
+        // Clear route cache and fetch fresh data if dates changed
+        if ( $dates_changed ) {
+            $traccar = new Trip_Tracker_Traccar_API();
+            $traccar->clear_route_cache( $post_id );
+            // Fetch fresh route data
+            $traccar->get_trip_route( $post_id );
+            // Recalculate statistics
+            Trip_Tracker_Statistics::calculate_trip_stats( $post_id );
         }
 
         if ( isset( $_POST['trip_route_color'] ) ) {
