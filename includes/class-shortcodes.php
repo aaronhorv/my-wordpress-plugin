@@ -27,7 +27,10 @@ class Trip_Tracker_Shortcodes {
         }
 
         $trip_id = get_the_ID();
-        $map_html = $this->render_trip_map( array( 'id' => $trip_id ) );
+        $map_html = $this->render_trip_map( array(
+            'id' => $trip_id,
+            'fullscreen' => 'yes'
+        ) );
 
         // Add map before the content
         return $map_html . $content;
@@ -35,7 +38,7 @@ class Trip_Tracker_Shortcodes {
 
     /**
      * Render a single trip map.
-     * Usage: [trip_map] or [trip_map id="123"]
+     * Usage: [trip_map] or [trip_map id="123"] or [trip_map fullscreen="yes"]
      */
     public function render_trip_map( $atts ) {
         $atts = shortcode_atts( array(
@@ -43,6 +46,7 @@ class Trip_Tracker_Shortcodes {
             'height' => '500px',
             'show_photos' => 'yes',
             'show_stats' => 'yes',
+            'fullscreen' => 'no',
         ), $atts );
 
         // Get trip ID
@@ -63,13 +67,25 @@ class Trip_Tracker_Shortcodes {
         $photo_locations = get_post_meta( $trip_id, '_trip_photo_locations', true ) ?: array();
 
         $map_id = 'trip-map-' . $trip_id . '-' . wp_rand();
+        $is_fullscreen = $atts['fullscreen'] === 'yes';
+        $container_class = 'trip-tracker-container' . ( $is_fullscreen ? ' trip-tracker-fullscreen' : '' );
 
         ob_start();
         ?>
-        <div class="trip-tracker-container" data-trip-id="<?php echo esc_attr( $trip_id ); ?>">
+        <div class="<?php echo esc_attr( $container_class ); ?>" data-trip-id="<?php echo esc_attr( $trip_id ); ?>">
+            <div id="<?php echo esc_attr( $map_id ); ?>"
+                 class="trip-tracker-map"
+                 <?php if ( ! $is_fullscreen ) : ?>style="height: <?php echo esc_attr( $atts['height'] ); ?>;"<?php endif; ?>
+                 data-trip-id="<?php echo esc_attr( $trip_id ); ?>"
+                 data-status="<?php echo esc_attr( $status ); ?>"
+                 data-route-color="<?php echo esc_attr( $route_color ); ?>"
+                 data-show-photos="<?php echo esc_attr( $atts['show_photos'] ); ?>"
+                 data-photos="<?php echo esc_attr( wp_json_encode( $photo_locations ) ); ?>">
+            </div>
+
             <?php if ( $atts['show_stats'] === 'yes' ) : ?>
                 <?php $stats = Trip_Tracker_Statistics::get_trip_stats( $trip_id ); ?>
-                <div class="trip-tracker-stats">
+                <div class="trip-tracker-stats-overlay">
                     <span class="stat-item"><strong><?php esc_html_e( 'Distance:', 'trip-tracker' ); ?></strong> <?php echo esc_html( $stats['distance'] ); ?></span>
                     <span class="stat-item"><strong><?php esc_html_e( 'Duration:', 'trip-tracker' ); ?></strong> <?php echo esc_html( $stats['duration'] ); ?></span>
                     <?php if ( $stats['countries'] ) : ?>
@@ -81,15 +97,9 @@ class Trip_Tracker_Shortcodes {
                 </div>
             <?php endif; ?>
 
-            <div id="<?php echo esc_attr( $map_id ); ?>"
-                 class="trip-tracker-map"
-                 style="height: <?php echo esc_attr( $atts['height'] ); ?>;"
-                 data-trip-id="<?php echo esc_attr( $trip_id ); ?>"
-                 data-status="<?php echo esc_attr( $status ); ?>"
-                 data-route-color="<?php echo esc_attr( $route_color ); ?>"
-                 data-show-photos="<?php echo esc_attr( $atts['show_photos'] ); ?>"
-                 data-photos="<?php echo esc_attr( wp_json_encode( $photo_locations ) ); ?>">
-            </div>
+            <?php if ( $is_fullscreen ) : ?>
+                <button type="button" class="trip-tracker-fullscreen-close" onclick="document.querySelector('.trip-tracker-fullscreen').classList.remove('trip-tracker-fullscreen'); this.remove(); window.scrollTo(0, 0);" title="<?php esc_attr_e( 'Exit fullscreen', 'trip-tracker' ); ?>">&times;</button>
+            <?php endif; ?>
         </div>
         <?php
         return ob_get_clean();

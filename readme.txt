@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,14 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.6.0 =
+* Full-screen map mode - map now fills entire viewport on trip pages
+* Stats overlay - trip statistics displayed inside the map (top-left corner)
+* Close button to exit full-screen mode
+* Fixed photo markers floating when zooming - now anchored properly to coordinates
+* Responsive design for stats overlay on mobile
+* Added `fullscreen="yes"` shortcode parameter for manual control
 
 = 1.5.0 =
 * Improved photo timestamp matching to route coordinates

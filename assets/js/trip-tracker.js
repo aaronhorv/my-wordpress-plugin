@@ -312,8 +312,12 @@
                 });
 
                 // Use first photo's location for the marker
+                // Anchor at bottom-center so marker stays fixed to coordinate
                 const firstPhoto = group[0];
-                new mapboxgl.Marker(container)
+                new mapboxgl.Marker({
+                    element: container,
+                    anchor: 'bottom'
+                })
                     .setLngLat([firstPhoto.longitude, firstPhoto.latitude])
                     .addTo(map);
             });
