@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,15 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.5.0 =
+* Improved photo timestamp matching to route coordinates
+* Photos now stack when at the same location - hover to fan out and reveal all
+* Single photo hover grows by 10%
+* Stacked photos fan out on hover revealing 10% of cards below
+* Stack count badge shows number of photos in stack
+* Live position marker is now 20% larger
+* Better timestamp parsing for EXIF data with timezone handling
 
 = 1.4.0 =
 * Photos now display on the map as polaroid-style markers

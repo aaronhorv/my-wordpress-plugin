@@ -274,10 +274,10 @@
     }
 }
 
-/* Custom marker styles */
+/* Custom marker styles - 20% larger */
 .trip-tracker-marker {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -322,6 +322,12 @@
     }
 }
 
+/* Photo stack container */
+.trip-photo-stack {
+    position: relative;
+    cursor: pointer;
+}
+
 /* Photo marker on map - Polaroid style */
 .trip-photo-marker {
     width: 50px;
@@ -331,13 +337,54 @@
     border-radius: 2px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.25s ease-out, box-shadow 0.2s;
+    --base-rotation: 0deg;
+    --stack-index: 0;
 }
 
-.trip-photo-marker:hover {
-    transform: scale(1.15) !important;
+/* Single photo hover - grow by 10% */
+.trip-photo-stack:not(.is-stacked) .trip-photo-marker:hover {
+    transform: rotate(var(--base-rotation)) scale(1.1);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-    z-index: 10;
+}
+
+/* Stacked photos - positioning */
+.trip-photo-stack.is-stacked .trip-photo-marker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotate(var(--base-rotation)) translateY(calc(var(--stack-index) * -3px));
+}
+
+/* Stacked photos hover - fan out to reveal 10% of cards below */
+.trip-photo-stack.is-stacked:hover .trip-photo-marker {
+    transform: rotate(var(--base-rotation)) translateX(calc(var(--stack-index) * 12px)) translateY(calc(var(--stack-index) * -8px));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.trip-photo-stack.is-stacked:hover .trip-photo-marker:hover {
+    transform: rotate(var(--base-rotation)) translateX(calc(var(--stack-index) * 12px)) translateY(calc(var(--stack-index) * -8px)) scale(1.1);
+    z-index: 100 !important;
+}
+
+/* Stack indicator badge */
+.trip-photo-stack.is-stacked::after {
+    content: attr(data-count);
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #007bff;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .trip-photo-marker .polaroid-frame {

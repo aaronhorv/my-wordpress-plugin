@@ -182,13 +182,26 @@ class Trip_Tracker_Photos {
      */
     private static function find_location_by_timestamp( $route, $photo_timestamp ) {
         if ( empty( $route ) ) {
+            error_log( 'Trip Tracker Photo: Route is empty' );
             return null;
         }
 
-        $photo_time = strtotime( $photo_timestamp );
+        // Parse photo timestamp - EXIF format is usually "YYYY:MM:DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS"
+        $photo_timestamp_normalized = str_replace( ':', '-', substr( $photo_timestamp, 0, 10 ) ) . substr( $photo_timestamp, 10 );
+        $photo_time = strtotime( $photo_timestamp_normalized );
+
         if ( ! $photo_time ) {
+            // Try parsing as-is
+            $photo_time = strtotime( $photo_timestamp );
+        }
+
+        if ( ! $photo_time ) {
+            error_log( 'Trip Tracker Photo: Could not parse photo timestamp: ' . $photo_timestamp );
             return null;
         }
+
+        error_log( 'Trip Tracker Photo: Looking for match for photo taken at ' . date( 'Y-m-d H:i:s', $photo_time ) );
+        error_log( 'Trip Tracker Photo: Route has ' . count( $route ) . ' points' );
 
         $closest_point = null;
         $closest_diff = PHP_INT_MAX;
@@ -198,7 +211,13 @@ class Trip_Tracker_Photos {
                 continue;
             }
 
+            // Traccar timestamps are ISO 8601 format (e.g., "2024-01-15T14:30:00.000+00:00")
             $point_time = strtotime( $point['timestamp'] );
+
+            if ( ! $point_time ) {
+                continue;
+            }
+
             $diff = abs( $point_time - $photo_time );
 
             if ( $diff < $closest_diff ) {
@@ -207,11 +226,16 @@ class Trip_Tracker_Photos {
             }
         }
 
-        // Only return if within 1 hour tolerance
-        if ( $closest_diff <= 3600 ) {
+        if ( $closest_point ) {
+            error_log( 'Trip Tracker Photo: Closest point is ' . $closest_diff . ' seconds away at ' . $closest_point['latitude'] . ', ' . $closest_point['longitude'] );
+        }
+
+        // Return closest point within 24 hours (increased tolerance for timezone issues)
+        if ( $closest_diff <= 86400 ) {
             return $closest_point;
         }
 
+        error_log( 'Trip Tracker Photo: No match within 24 hours, closest was ' . $closest_diff . ' seconds away' );
         return null;
     }
 

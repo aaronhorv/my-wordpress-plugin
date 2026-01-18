@@ -246,46 +246,107 @@
         addPhotoMarkersToMap: function(map, photos, prefix) {
             if (!map || !photos) return;
 
-            photos.forEach(function(photo, index) {
-                if (!photo.latitude || !photo.longitude) return;
+            // Group photos by location (within ~50 meters)
+            const photoGroups = this.groupPhotosByLocation(photos);
 
-                // Create polaroid-style photo marker element
-                const el = document.createElement('div');
-                el.className = 'trip-photo-marker';
+            photoGroups.forEach(function(group, groupIndex) {
+                const isStack = group.length > 1;
 
-                // Random slight rotation for natural polaroid look
-                const rotation = (Math.random() * 10 - 5);
-                el.style.transform = 'rotate(' + rotation + 'deg)';
+                // Create container for the stack
+                const container = document.createElement('div');
+                container.className = 'trip-photo-stack' + (isStack ? ' is-stacked' : '');
+                if (isStack) {
+                    container.setAttribute('data-count', group.length);
+                }
 
-                el.innerHTML = '<div class="polaroid-frame">' +
-                    '<img src="' + (photo.thumbnail || photo.url) + '" alt="">' +
-                    '</div>';
+                group.forEach(function(photo, index) {
+                    // Create polaroid-style photo marker element
+                    const el = document.createElement('div');
+                    el.className = 'trip-photo-marker';
+                    el.setAttribute('data-index', index);
 
-                // Create popup with full polaroid view
-                const popup = new mapboxgl.Popup({
-                    offset: [0, -20],
-                    closeButton: true,
-                    closeOnClick: false,
-                    maxWidth: '320px',
-                    className: 'trip-photo-popup'
-                }).setHTML(
-                    '<div class="trip-photo-polaroid">' +
-                    '<div class="polaroid-image">' +
-                    '<img src="' + (photo.full_url || photo.url) + '" alt="">' +
-                    '</div>' +
-                    '<div class="polaroid-caption">' +
-                    (photo.caption ? '<span class="caption-text">' + photo.caption + '</span>' : '') +
-                    (photo.timestamp ? '<span class="caption-date">' + photo.timestamp + '</span>' : '') +
-                    '</div>' +
-                    '</div>'
-                );
+                    // Random slight rotation for natural polaroid look
+                    const rotation = (Math.random() * 10 - 5);
+                    el.style.setProperty('--base-rotation', rotation + 'deg');
+                    el.style.transform = 'rotate(' + rotation + 'deg)';
 
-                // Add marker
-                new mapboxgl.Marker(el)
-                    .setLngLat([photo.longitude, photo.latitude])
-                    .setPopup(popup)
+                    // Stack offset when not hovered
+                    if (isStack) {
+                        el.style.setProperty('--stack-index', index);
+                        el.style.zIndex = group.length - index;
+                    }
+
+                    el.innerHTML = '<div class="polaroid-frame">' +
+                        '<img src="' + (photo.thumbnail || photo.url) + '" alt="">' +
+                        '</div>';
+
+                    // Create popup with full polaroid view
+                    const popup = new mapboxgl.Popup({
+                        offset: [0, -30],
+                        closeButton: true,
+                        closeOnClick: false,
+                        maxWidth: '320px',
+                        className: 'trip-photo-popup'
+                    }).setHTML(
+                        '<div class="trip-photo-polaroid">' +
+                        '<div class="polaroid-image">' +
+                        '<img src="' + (photo.full_url || photo.url) + '" alt="">' +
+                        '</div>' +
+                        '<div class="polaroid-caption">' +
+                        (photo.caption ? '<span class="caption-text">' + photo.caption + '</span>' : '') +
+                        (photo.timestamp ? '<span class="caption-date">' + photo.timestamp + '</span>' : '') +
+                        '</div>' +
+                        '</div>'
+                    );
+
+                    // Click handler for popup
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        // Close any open popups first
+                        const existingPopups = document.querySelectorAll('.mapboxgl-popup');
+                        existingPopups.forEach(function(p) { p.remove(); });
+                        popup.setLngLat([photo.longitude, photo.latitude]).addTo(map);
+                    });
+
+                    container.appendChild(el);
+                });
+
+                // Use first photo's location for the marker
+                const firstPhoto = group[0];
+                new mapboxgl.Marker(container)
+                    .setLngLat([firstPhoto.longitude, firstPhoto.latitude])
                     .addTo(map);
             });
+        },
+
+        groupPhotosByLocation: function(photos) {
+            const groups = [];
+            const used = new Set();
+            const threshold = 0.0005; // ~50 meters at equator
+
+            photos.forEach(function(photo, i) {
+                if (used.has(i) || !photo.latitude || !photo.longitude) return;
+
+                const group = [photo];
+                used.add(i);
+
+                // Find nearby photos
+                photos.forEach(function(other, j) {
+                    if (used.has(j) || !other.latitude || !other.longitude) return;
+
+                    const latDiff = Math.abs(photo.latitude - other.latitude);
+                    const lngDiff = Math.abs(photo.longitude - other.longitude);
+
+                    if (latDiff < threshold && lngDiff < threshold) {
+                        group.push(other);
+                        used.add(j);
+                    }
+                });
+
+                groups.push(group);
+            });
+
+            return groups;
         },
 
         startLiveUpdates: function(tripId) {
@@ -344,19 +405,19 @@
 
                 if (tripTrackerSettings.markerUrl) {
                     el.style.backgroundImage = 'url(' + tripTrackerSettings.markerUrl + ')';
-                    el.style.width = '40px';
-                    el.style.height = '40px';
+                    el.style.width = '48px';
+                    el.style.height = '48px';
                     el.style.backgroundSize = 'contain';
                     el.style.backgroundRepeat = 'no-repeat';
                     el.style.backgroundPosition = 'center';
                 } else {
-                    // Default arrow marker for direction
-                    el.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                    // Default arrow marker for direction (20% larger: 36x36)
+                    el.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
                         '<circle cx="12" cy="12" r="10" fill="' + (isLive ? '#28a745' : '#6c757d') + '" stroke="white" stroke-width="2"/>' +
                         '<path d="M12 6L16 14H8L12 6Z" fill="white"/>' +
                         '</svg>';
-                    el.style.width = '30px';
-                    el.style.height = '30px';
+                    el.style.width = '36px';
+                    el.style.height = '36px';
                 }
 
                 // Apply initial rotation if moving
@@ -401,19 +462,19 @@
 
                         if (tripTrackerSettings.markerUrl) {
                             el.style.backgroundImage = 'url(' + tripTrackerSettings.markerUrl + ')';
-                            el.style.width = '40px';
-                            el.style.height = '40px';
+                            el.style.width = '48px';
+                            el.style.height = '48px';
                             el.style.backgroundSize = 'contain';
                             el.style.backgroundRepeat = 'no-repeat';
                             el.style.backgroundPosition = 'center';
                         } else {
-                            // Default arrow marker
-                            el.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                            // Default arrow marker (20% larger: 36x36)
+                            el.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
                                 '<circle cx="12" cy="12" r="10" fill="#28a745" stroke="white" stroke-width="2"/>' +
                                 '<path d="M12 6L16 14H8L12 6Z" fill="white"/>' +
                                 '</svg>';
-                            el.style.width = '30px';
-                            el.style.height = '30px';
+                            el.style.width = '36px';
+                            el.style.height = '36px';
                         }
 
                         // Apply rotation if moving
