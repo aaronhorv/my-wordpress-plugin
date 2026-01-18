@@ -391,7 +391,120 @@ class Trip_Tracker_Admin {
                 submit_button();
                 ?>
             </form>
+
+            <hr>
+            <h2><?php esc_html_e( 'Debug Information', 'trip-tracker' ); ?></h2>
+            <?php $this->render_debug_section(); ?>
         </div>
+        <?php
+    }
+
+    public function render_debug_section() {
+        $traccar = new Trip_Tracker_Traccar_API();
+        $debug = $traccar->get_debug_info();
+        ?>
+        <table class="widefat" style="max-width: 800px;">
+            <tbody>
+                <tr>
+                    <th style="width: 200px;"><?php esc_html_e( 'API URL', 'trip-tracker' ); ?></th>
+                    <td><?php echo $debug['api_url'] ? esc_html( $debug['api_url'] ) : '<span style="color: red;">Not configured</span>'; ?></td>
+                </tr>
+                <tr>
+                    <th><?php esc_html_e( 'Device ID', 'trip-tracker' ); ?></th>
+                    <td><?php echo $debug['device_id'] ? esc_html( $debug['device_id'] ) : '<span style="color: red;">Not configured</span>'; ?></td>
+                </tr>
+                <tr>
+                    <th><?php esc_html_e( 'Auth Type', 'trip-tracker' ); ?></th>
+                    <td><?php echo esc_html( ucfirst( $debug['auth_type'] ) ); ?></td>
+                </tr>
+                <tr>
+                    <th><?php esc_html_e( 'Connection Test', 'trip-tracker' ); ?></th>
+                    <td>
+                        <?php
+                        $connection = $traccar->test_connection();
+                        if ( is_wp_error( $connection ) ) {
+                            echo '<span style="color: red;">Failed: ' . esc_html( $connection->get_error_message() ) . '</span>';
+                        } else {
+                            echo '<span style="color: green;">Success</span>';
+                        }
+                        ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th><?php esc_html_e( 'Current Position', 'trip-tracker' ); ?></th>
+                    <td>
+                        <?php
+                        $position = $traccar->get_current_position();
+                        if ( is_wp_error( $position ) ) {
+                            echo '<span style="color: red;">Failed: ' . esc_html( $position->get_error_message() ) . '</span>';
+                        } else {
+                            echo '<span style="color: green;">Lat: ' . esc_html( $position['latitude'] ) . ', Lng: ' . esc_html( $position['longitude'] ) . '</span>';
+                            echo '<br><small>Last update: ' . esc_html( $position['timestamp'] ) . '</small>';
+                        }
+                        ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th><?php esc_html_e( 'Route Test (last 24h)', 'trip-tracker' ); ?></th>
+                    <td>
+                        <?php
+                        $from = date( 'Y-m-d\TH:i:s', strtotime( '-1 day' ) );
+                        $to = date( 'Y-m-d\TH:i:s' );
+                        $route = $traccar->get_positions( $from, $to );
+                        if ( is_wp_error( $route ) ) {
+                            echo '<span style="color: red;">Failed: ' . esc_html( $route->get_error_message() ) . '</span>';
+                        } else {
+                            echo '<span style="color: green;">' . count( $route ) . ' points found</span>';
+                        }
+                        ?>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 20px;"><?php esc_html_e( 'Recent Trips Debug', 'trip-tracker' ); ?></h3>
+        <?php
+        $trips = get_posts( array(
+            'post_type' => 'trip',
+            'posts_per_page' => 5,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ) );
+
+        if ( $trips ) :
+        ?>
+        <table class="widefat" style="max-width: 800px;">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e( 'Trip', 'trip-tracker' ); ?></th>
+                    <th><?php esc_html_e( 'Status', 'trip-tracker' ); ?></th>
+                    <th><?php esc_html_e( 'Start Date', 'trip-tracker' ); ?></th>
+                    <th><?php esc_html_e( 'End Date', 'trip-tracker' ); ?></th>
+                    <th><?php esc_html_e( 'Cached Points', 'trip-tracker' ); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ( $trips as $trip ) : ?>
+                    <?php
+                    $status = get_post_meta( $trip->ID, '_trip_status', true ) ?: 'draft';
+                    $start = get_post_meta( $trip->ID, '_trip_start_date', true );
+                    $end = get_post_meta( $trip->ID, '_trip_end_date', true );
+                    $cache = get_post_meta( $trip->ID, '_trip_route_cache', true );
+                    $cache_count = is_array( $cache ) ? count( $cache ) : 0;
+                    ?>
+                    <tr>
+                        <td><a href="<?php echo esc_url( get_edit_post_link( $trip->ID ) ); ?>"><?php echo esc_html( $trip->post_title ); ?></a> (ID: <?php echo esc_html( $trip->ID ); ?>)</td>
+                        <td><?php echo esc_html( ucfirst( $status ) ); ?></td>
+                        <td><?php echo $start ? esc_html( $start ) : '<span style="color: orange;">Not set</span>'; ?></td>
+                        <td><?php echo $end ? esc_html( $end ) : '—'; ?></td>
+                        <td><?php echo esc_html( $cache_count ); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php else : ?>
+            <p><?php esc_html_e( 'No trips found.', 'trip-tracker' ); ?></p>
+        <?php endif; ?>
         <?php
     }
 
