@@ -3,7 +3,7 @@
  * Plugin Name: Trip Tracker
  * Plugin URI: https://github.com/aaronhorv/my-wordpress-plugin
  * Description: A self-hosted trip tracking plugin for campers and travel influencers. Track your journeys with Mapbox and Traccar.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: aaronhorv
  * Author URI: https://github.com/aaronhorv
  * License: GPL-2.0+
@@ -16,7 +16,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-define( 'TRIP_TRACKER_VERSION', '1.2.0' );
+define( 'TRIP_TRACKER_VERSION', '1.2.1' );
 define( 'TRIP_TRACKER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TRIP_TRACKER_URL', plugin_dir_url( __FILE__ ) );
 

@@ -431,12 +431,43 @@ class Trip_Tracker_Admin {
                     </td>
                 </tr>
                 <tr>
+                    <th><?php esc_html_e( 'Available Devices', 'trip-tracker' ); ?></th>
+                    <td>
+                        <?php
+                        $devices = $traccar->get_devices();
+                        if ( is_wp_error( $devices ) ) {
+                            echo '<span style="color: red;">Failed: ' . esc_html( $devices->get_error_message() ) . '</span>';
+                        } elseif ( empty( $devices ) ) {
+                            echo '<span style="color: orange;">No devices found</span>';
+                        } else {
+                            echo '<ul style="margin: 0; padding-left: 20px;">';
+                            foreach ( $devices as $device ) {
+                                $is_current = ( strval( $device['id'] ) === strval( $debug['device_id'] ) );
+                                $status = isset( $device['status'] ) ? $device['status'] : 'unknown';
+                                $style = $is_current ? 'font-weight: bold; color: green;' : '';
+                                echo '<li style="' . $style . '">';
+                                echo 'ID: <strong>' . esc_html( $device['id'] ) . '</strong> - ' . esc_html( $device['name'] );
+                                echo ' <small>(' . esc_html( $status ) . ')</small>';
+                                if ( $is_current ) {
+                                    echo ' ← current';
+                                }
+                                echo '</li>';
+                            }
+                            echo '</ul>';
+                        }
+                        ?>
+                    </td>
+                </tr>
+                <tr>
                     <th><?php esc_html_e( 'Current Position', 'trip-tracker' ); ?></th>
                     <td>
                         <?php
                         $position = $traccar->get_current_position();
                         if ( is_wp_error( $position ) ) {
                             echo '<span style="color: red;">Failed: ' . esc_html( $position->get_error_message() ) . '</span>';
+                            if ( strpos( $position->get_error_message(), 'No position' ) !== false ) {
+                                echo '<br><small>This usually means the device is offline or the Device ID is wrong. Check the list above.</small>';
+                            }
                         } else {
                             echo '<span style="color: green;">Lat: ' . esc_html( $position['latitude'] ) . ', Lng: ' . esc_html( $position['longitude'] ) . '</span>';
                             echo '<br><small>Last update: ' . esc_html( $position['timestamp'] ) . '</small>';
