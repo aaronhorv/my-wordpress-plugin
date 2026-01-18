@@ -1,0 +1,123 @@
+/**
+ * Trip Tracker - Admin Styles
+ */
+
+/* Dashboard panels */
+.trip-tracker-dashboard .trip-control-panel,
+.trip-tracker-dashboard .recent-trips,
+.trip-tracker-dashboard .shortcodes-reference {
+    max-width: 1200px;
+}
+
+/* Trip photos in editor */
+#trip-photos-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.trip-photo-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.trip-photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.trip-photo-item .remove-photo {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    background: rgba(220, 53, 69, 0.9);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 18px;
+    text-align: center;
+    padding: 0;
+}
+
+.trip-photo-item .remove-photo:hover {
+    background: #dc3545;
+}
+
+/* Map preview */
+#trip-map-preview {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Status colors */
+.trip-status-live {
+    color: #46b450;
+}
+
+.trip-status-paused {
+    color: #ffb900;
+}
+
+.trip-status-completed {
+    color: #0073aa;
+}
+
+.trip-status-draft {
+    color: #999;
+}
+
+/* Active trip info box */
+.active-trip-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Connection test */
+#traccar-connection-status {
+    font-weight: bold;
+}
+
+#traccar-connection-status.success {
+    color: #46b450;
+}
+
+#traccar-connection-status.error {
+    color: #dc3545;
+}
+
+/* Media upload button */
+.trip-tracker-media-upload {
+    margin-left: 5px;
+}
+
+/* Settings page */
+.wrap h2 {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.wrap h2:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+/* Shortcode table in dashboard */
+.shortcodes-reference code {
+    background: #f0f0f0;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-family: Consolas, Monaco, monospace;
+}

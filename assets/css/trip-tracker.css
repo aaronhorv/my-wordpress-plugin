@@ -1,0 +1,321 @@
+/**
+ * Trip Tracker - Frontend Styles
+ */
+
+/* Container */
+.trip-tracker-container {
+    margin: 20px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+/* Statistics bar */
+.trip-tracker-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #e9ecef;
+    border-bottom: none;
+}
+
+.trip-tracker-stats .stat-item {
+    font-size: 14px;
+    color: #495057;
+}
+
+.trip-tracker-stats .stat-item strong {
+    color: #212529;
+}
+
+.trip-status-live {
+    color: #28a745 !important;
+    font-weight: bold;
+}
+
+.live-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Map container */
+.trip-tracker-map {
+    width: 100%;
+    min-height: 400px;
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.trip-tracker-container:not(:has(.trip-tracker-stats)) .trip-tracker-map {
+    border-radius: 8px;
+}
+
+/* Legend for all trips map */
+.trip-tracker-legend {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px 8px 0 0;
+    border-bottom: none;
+}
+
+.trip-tracker-legend h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #212529;
+}
+
+.trip-tracker-legend ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.trip-tracker-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.trip-tracker-legend .legend-color {
+    width: 20px;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.trip-tracker-legend a {
+    color: #495057;
+    text-decoration: none;
+}
+
+.trip-tracker-legend a:hover {
+    color: #007bff;
+}
+
+.live-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #28a745;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+/* Trip list */
+.trip-tracker-list {
+    display: grid;
+    gap: 20px;
+}
+
+.trip-list-item {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: box-shadow 0.2s;
+}
+
+.trip-list-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.trip-list-item .trip-thumbnail {
+    flex-shrink: 0;
+    width: 150px;
+    height: 100px;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.trip-list-item .trip-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.trip-list-item .trip-info {
+    flex: 1;
+}
+
+.trip-list-item h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+}
+
+.trip-list-item h3 a {
+    color: #212529;
+    text-decoration: none;
+}
+
+.trip-list-item h3 a:hover {
+    color: #007bff;
+}
+
+.trip-list-item .trip-date {
+    margin: 0 0 5px 0;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.trip-list-item .trip-stats {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #495057;
+}
+
+.trip-list-item .trip-excerpt {
+    margin: 0;
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+/* Photo polaroid style */
+.trip-photo-polaroid {
+    background: #fff;
+    padding: 10px 10px 30px 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    transform: rotate(-2deg);
+    max-width: 200px;
+}
+
+.trip-photo-polaroid img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.trip-photo-polaroid .photo-caption {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #333;
+    text-align: center;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+.trip-photo-polaroid .photo-date {
+    font-size: 10px;
+    color: #999;
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* Mapbox popup customization */
+.mapboxgl-popup-content {
+    padding: 0 !important;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.mapboxgl-popup-content .trip-photo-polaroid {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Notice styling */
+.trip-tracker-notice {
+    padding: 20px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .trip-tracker-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .trip-list-item {
+        flex-direction: column;
+    }
+
+    .trip-list-item .trip-thumbnail {
+        width: 100%;
+        height: 200px;
+    }
+
+    .trip-tracker-legend ul {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* Custom marker styles */
+.trip-tracker-marker {
+    width: 30px;
+    height: 30px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    cursor: pointer;
+}
+
+.trip-tracker-marker-live {
+    animation: marker-bounce 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes marker-bounce {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-5px);
+    }
+}
+
+/* Photo marker on map */
+.trip-photo-marker {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    border: 3px solid #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.trip-photo-marker:hover {
+    transform: scale(1.1);
+}
+
+.trip-photo-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
