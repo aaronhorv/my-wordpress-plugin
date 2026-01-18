@@ -309,10 +309,21 @@
             if (!map) return;
 
             const lngLat = [position.longitude, position.latitude];
+            const course = position.course || 0; // Direction in degrees (0 = North)
+            const speed = position.speed || 0;
 
             if (this.markers[tripId]) {
-                // Update existing marker
+                // Update existing marker position
                 this.markers[tripId].setLngLat(lngLat);
+
+                // Update rotation if moving (speed > 1 km/h)
+                const markerEl = this.markers[tripId].getElement();
+                if (speed > 1) {
+                    markerEl.style.transform = 'rotate(' + course + 'deg)';
+                    markerEl.classList.add('trip-tracker-marker-moving');
+                } else {
+                    markerEl.classList.remove('trip-tracker-marker-moving');
+                }
             } else {
                 // Create new marker
                 const el = document.createElement('div');
@@ -320,17 +331,33 @@
 
                 if (tripTrackerSettings.markerUrl) {
                     el.style.backgroundImage = 'url(' + tripTrackerSettings.markerUrl + ')';
+                    el.style.width = '40px';
+                    el.style.height = '40px';
+                    el.style.backgroundSize = 'contain';
+                    el.style.backgroundRepeat = 'no-repeat';
+                    el.style.backgroundPosition = 'center';
                 } else {
-                    // Default marker style
-                    el.style.width = '20px';
-                    el.style.height = '20px';
-                    el.style.backgroundColor = isLive ? '#28a745' : '#6c757d';
-                    el.style.borderRadius = '50%';
-                    el.style.border = '3px solid #fff';
-                    el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                    // Default arrow marker for direction
+                    el.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                        '<circle cx="12" cy="12" r="10" fill="' + (isLive ? '#28a745' : '#6c757d') + '" stroke="white" stroke-width="2"/>' +
+                        '<path d="M12 6L16 14H8L12 6Z" fill="white"/>' +
+                        '</svg>';
+                    el.style.width = '30px';
+                    el.style.height = '30px';
                 }
 
-                this.markers[tripId] = new mapboxgl.Marker(el)
+                // Apply initial rotation if moving
+                if (speed > 1) {
+                    el.style.transform = 'rotate(' + course + 'deg)';
+                    el.classList.add('trip-tracker-marker-moving');
+                }
+
+                // Use Mapbox marker without default rotation handling
+                this.markers[tripId] = new mapboxgl.Marker({
+                    element: el,
+                    rotationAlignment: 'map',
+                    pitchAlignment: 'map'
+                })
                     .setLngLat(lngLat)
                     .addTo(map);
             }
@@ -356,19 +383,37 @@
                     if (response.position && response.status === 'live') {
                         const el = document.createElement('div');
                         el.className = 'trip-tracker-marker trip-tracker-marker-live';
+                        const course = response.position.course || 0;
+                        const speed = response.position.speed || 0;
 
                         if (tripTrackerSettings.markerUrl) {
                             el.style.backgroundImage = 'url(' + tripTrackerSettings.markerUrl + ')';
+                            el.style.width = '40px';
+                            el.style.height = '40px';
+                            el.style.backgroundSize = 'contain';
+                            el.style.backgroundRepeat = 'no-repeat';
+                            el.style.backgroundPosition = 'center';
                         } else {
-                            el.style.width = '20px';
-                            el.style.height = '20px';
-                            el.style.backgroundColor = '#28a745';
-                            el.style.borderRadius = '50%';
-                            el.style.border = '3px solid #fff';
-                            el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                            // Default arrow marker
+                            el.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                                '<circle cx="12" cy="12" r="10" fill="#28a745" stroke="white" stroke-width="2"/>' +
+                                '<path d="M12 6L16 14H8L12 6Z" fill="white"/>' +
+                                '</svg>';
+                            el.style.width = '30px';
+                            el.style.height = '30px';
                         }
 
-                        new mapboxgl.Marker(el)
+                        // Apply rotation if moving
+                        if (speed > 1) {
+                            el.style.transform = 'rotate(' + course + 'deg)';
+                            el.classList.add('trip-tracker-marker-moving');
+                        }
+
+                        new mapboxgl.Marker({
+                            element: el,
+                            rotationAlignment: 'map',
+                            pitchAlignment: 'map'
+                        })
                             .setLngLat([response.position.longitude, response.position.latitude])
                             .addTo(map);
                     }

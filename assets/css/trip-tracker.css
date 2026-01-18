@@ -276,24 +276,49 @@
 
 /* Custom marker styles */
 .trip-tracker-marker {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: center bottom;
+    background-position: center;
     cursor: pointer;
+    transition: transform 0.3s ease-out;
+    transform-origin: center center;
 }
 
+/* Pulsing glow effect for live marker */
 .trip-tracker-marker-live {
-    animation: marker-bounce 0.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 6px rgba(40, 167, 69, 0.6));
 }
 
-@keyframes marker-bounce {
-    from {
-        transform: translateY(0);
+.trip-tracker-marker-live::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    margin: -25px 0 0 -25px;
+    border-radius: 50%;
+    background: rgba(40, 167, 69, 0.3);
+    animation: marker-pulse 2s ease-out infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* When moving, show direction indicator */
+.trip-tracker-marker-moving {
+    /* Rotation is applied via JS transform */
+}
+
+@keyframes marker-pulse {
+    0% {
+        transform: scale(0.5);
+        opacity: 1;
     }
-    to {
-        transform: translateY(-5px);
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
     }
 }
 

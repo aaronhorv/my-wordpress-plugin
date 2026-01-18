@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.2.1
+Stable tag: 1.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,14 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.3.0 =
+* Live marker now rotates to face direction of movement
+* Uses course/heading data from Traccar
+* Default marker is now an arrow indicator
+* Custom marker images rotate when moving
+* Smooth rotation transitions
+* Pulsing glow effect on live markers
 
 = 1.2.1 =
 * Debug section now shows list of available devices from Traccar
