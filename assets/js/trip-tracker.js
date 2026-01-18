@@ -249,21 +249,34 @@
             photos.forEach(function(photo, index) {
                 if (!photo.latitude || !photo.longitude) return;
 
-                // Create photo marker element
+                // Create polaroid-style photo marker element
                 const el = document.createElement('div');
                 el.className = 'trip-photo-marker';
-                el.innerHTML = '<img src="' + photo.url + '" alt="">';
 
-                // Create popup
+                // Random slight rotation for natural polaroid look
+                const rotation = (Math.random() * 10 - 5);
+                el.style.transform = 'rotate(' + rotation + 'deg)';
+
+                el.innerHTML = '<div class="polaroid-frame">' +
+                    '<img src="' + (photo.thumbnail || photo.url) + '" alt="">' +
+                    '</div>';
+
+                // Create popup with full polaroid view
                 const popup = new mapboxgl.Popup({
-                    offset: 25,
+                    offset: [0, -20],
                     closeButton: true,
-                    maxWidth: '250px'
+                    closeOnClick: false,
+                    maxWidth: '320px',
+                    className: 'trip-photo-popup'
                 }).setHTML(
                     '<div class="trip-photo-polaroid">' +
+                    '<div class="polaroid-image">' +
                     '<img src="' + (photo.full_url || photo.url) + '" alt="">' +
-                    (photo.caption ? '<div class="photo-caption">' + photo.caption + '</div>' : '') +
-                    (photo.timestamp ? '<div class="photo-date">' + photo.timestamp + '</div>' : '') +
+                    '</div>' +
+                    '<div class="polaroid-caption">' +
+                    (photo.caption ? '<span class="caption-text">' + photo.caption + '</span>' : '') +
+                    (photo.timestamp ? '<span class="caption-date">' + photo.timestamp + '</span>' : '') +
+                    '</div>' +
                     '</div>'
                 );
 

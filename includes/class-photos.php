@@ -113,43 +113,61 @@ class Trip_Tracker_Photos {
         $traccar = new Trip_Tracker_Traccar_API();
         $route = $traccar->get_trip_route( $trip_id );
 
-        if ( empty( $route ) ) {
-            return;
-        }
-
         $photo_locations = array();
 
         foreach ( $photo_ids as $photo_id ) {
+            // Try to extract EXIF if not already done
             $exif = get_post_meta( $photo_id, '_trip_tracker_exif', true );
+            if ( empty( $exif ) ) {
+                $file = get_attached_file( $photo_id );
+                if ( $file && file_exists( $file ) ) {
+                    $photos_handler = new self();
+                    $exif = $photos_handler->get_exif_data( $file );
+                    if ( ! empty( $exif ) ) {
+                        update_post_meta( $photo_id, '_trip_tracker_exif', $exif );
+                    }
+                }
+            }
+
+            $photo_data = array(
+                'id' => $photo_id,
+                'url' => wp_get_attachment_image_url( $photo_id, 'medium' ),
+                'full_url' => wp_get_attachment_image_url( $photo_id, 'large' ),
+                'thumbnail' => wp_get_attachment_image_url( $photo_id, 'thumbnail' ),
+                'latitude' => null,
+                'longitude' => null,
+                'timestamp' => isset( $exif['timestamp'] ) ? $exif['timestamp'] : '',
+                'caption' => get_the_title( $photo_id ),
+            );
 
             // If photo has GPS coordinates, use them directly
             if ( ! empty( $exif['latitude'] ) && ! empty( $exif['longitude'] ) ) {
-                $photo_locations[] = array(
-                    'id' => $photo_id,
-                    'url' => wp_get_attachment_image_url( $photo_id, 'medium' ),
-                    'full_url' => wp_get_attachment_image_url( $photo_id, 'large' ),
-                    'latitude' => $exif['latitude'],
-                    'longitude' => $exif['longitude'],
-                    'timestamp' => isset( $exif['timestamp'] ) ? $exif['timestamp'] : '',
-                    'caption' => get_the_title( $photo_id ),
-                );
+                $photo_data['latitude'] = $exif['latitude'];
+                $photo_data['longitude'] = $exif['longitude'];
+                $photo_locations[] = $photo_data;
                 continue;
             }
 
-            // Otherwise, match by timestamp to route
-            if ( ! empty( $exif['timestamp'] ) ) {
+            // Try to match by timestamp to route
+            if ( ! empty( $route ) && ! empty( $exif['timestamp'] ) ) {
                 $location = self::find_location_by_timestamp( $route, $exif['timestamp'] );
 
                 if ( $location ) {
-                    $photo_locations[] = array(
-                        'id' => $photo_id,
-                        'url' => wp_get_attachment_image_url( $photo_id, 'medium' ),
-                        'full_url' => wp_get_attachment_image_url( $photo_id, 'large' ),
-                        'latitude' => $location['latitude'],
-                        'longitude' => $location['longitude'],
-                        'timestamp' => $exif['timestamp'],
-                        'caption' => get_the_title( $photo_id ),
-                    );
+                    $photo_data['latitude'] = $location['latitude'];
+                    $photo_data['longitude'] = $location['longitude'];
+                    $photo_locations[] = $photo_data;
+                    continue;
+                }
+            }
+
+            // Fallback: place at first route point if no location found
+            if ( ! empty( $route ) && empty( $photo_data['latitude'] ) ) {
+                $first_point = reset( $route );
+                if ( $first_point ) {
+                    $photo_data['latitude'] = $first_point['latitude'];
+                    $photo_data['longitude'] = $first_point['longitude'];
+                    $photo_data['location_estimated'] = true;
+                    $photo_locations[] = $photo_data;
                 }
             }
         }

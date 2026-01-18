@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,14 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.4.0 =
+* Photos now display on the map as polaroid-style markers
+* Improved EXIF extraction - re-extracts if data was missing on upload
+* Photos without GPS data are matched to route by timestamp
+* Fallback placement at first route point if no location match
+* Enhanced polaroid popup with image, caption, and date
+* Random slight rotation on photo markers for natural polaroid look
 
 = 1.3.0 =
 * Live marker now rotates to face direction of movement
