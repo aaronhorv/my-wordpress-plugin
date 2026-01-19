@@ -111,23 +111,40 @@ class Trip_Tracker_Photos {
      */
     public static function process_trip_photos( $trip_id, $photo_ids ) {
         $traccar = new Trip_Tracker_Traccar_API();
+
+        // Clear route cache to get fresh data with timestamps
+        $traccar->clear_route_cache( $trip_id );
+
+        // Fetch fresh route data
         $route = $traccar->get_trip_route( $trip_id );
+
+        error_log( 'Trip Tracker: Processing ' . count( $photo_ids ) . ' photos for trip ' . $trip_id );
+        error_log( 'Trip Tracker: Route has ' . ( is_array( $route ) ? count( $route ) : 0 ) . ' points' );
+
+        // Log first route point to check timestamp format
+        if ( ! empty( $route ) && is_array( $route ) ) {
+            $first = reset( $route );
+            $last = end( $route );
+            error_log( 'Trip Tracker: Route first point timestamp: ' . ( $first['timestamp'] ?? 'none' ) );
+            error_log( 'Trip Tracker: Route last point timestamp: ' . ( $last['timestamp'] ?? 'none' ) );
+        }
 
         $photo_locations = array();
 
         foreach ( $photo_ids as $photo_id ) {
-            // Try to extract EXIF if not already done
-            $exif = get_post_meta( $photo_id, '_trip_tracker_exif', true );
-            if ( empty( $exif ) ) {
-                $file = get_attached_file( $photo_id );
-                if ( $file && file_exists( $file ) ) {
-                    $photos_handler = new self();
-                    $exif = $photos_handler->get_exif_data( $file );
-                    if ( ! empty( $exif ) ) {
-                        update_post_meta( $photo_id, '_trip_tracker_exif', $exif );
-                    }
+            // Always re-extract EXIF to ensure fresh data
+            $file = get_attached_file( $photo_id );
+            $exif = array();
+            if ( $file && file_exists( $file ) ) {
+                $photos_handler = new self();
+                $exif = $photos_handler->get_exif_data( $file );
+                if ( ! empty( $exif ) ) {
+                    update_post_meta( $photo_id, '_trip_tracker_exif', $exif );
                 }
             }
+
+            error_log( 'Trip Tracker: Photo ' . $photo_id . ' EXIF timestamp: ' . ( $exif['timestamp'] ?? 'none' ) );
+            error_log( 'Trip Tracker: Photo ' . $photo_id . ' EXIF GPS: ' . ( isset( $exif['latitude'] ) ? $exif['latitude'] . ',' . $exif['longitude'] : 'none' ) );
 
             $photo_data = array(
                 'id' => $photo_id,
@@ -140,39 +157,38 @@ class Trip_Tracker_Photos {
                 'caption' => get_the_title( $photo_id ),
             );
 
-            // If photo has GPS coordinates, use them directly
+            // If photo has GPS coordinates in EXIF, use them directly
             if ( ! empty( $exif['latitude'] ) && ! empty( $exif['longitude'] ) ) {
                 $photo_data['latitude'] = $exif['latitude'];
                 $photo_data['longitude'] = $exif['longitude'];
+                $photo_data['source'] = 'exif_gps';
+                error_log( 'Trip Tracker: Photo ' . $photo_id . ' placed using EXIF GPS' );
                 $photo_locations[] = $photo_data;
                 continue;
             }
 
             // Try to match by timestamp to route
-            if ( ! empty( $route ) && ! empty( $exif['timestamp'] ) ) {
+            if ( ! empty( $route ) && is_array( $route ) && ! empty( $exif['timestamp'] ) ) {
                 $location = self::find_location_by_timestamp( $route, $exif['timestamp'] );
 
                 if ( $location ) {
                     $photo_data['latitude'] = $location['latitude'];
                     $photo_data['longitude'] = $location['longitude'];
+                    $photo_data['source'] = 'timestamp_match';
+                    $photo_data['matched_timestamp'] = $location['timestamp'];
+                    error_log( 'Trip Tracker: Photo ' . $photo_id . ' matched to route at ' . $location['latitude'] . ',' . $location['longitude'] );
                     $photo_locations[] = $photo_data;
                     continue;
                 }
             }
 
-            // Fallback: place at first route point if no location found
-            if ( ! empty( $route ) && empty( $photo_data['latitude'] ) ) {
-                $first_point = reset( $route );
-                if ( $first_point ) {
-                    $photo_data['latitude'] = $first_point['latitude'];
-                    $photo_data['longitude'] = $first_point['longitude'];
-                    $photo_data['location_estimated'] = true;
-                    $photo_locations[] = $photo_data;
-                }
-            }
+            // No location found - skip this photo (don't use fallback)
+            error_log( 'Trip Tracker: Photo ' . $photo_id . ' could not be placed - no GPS or timestamp match' );
         }
 
         update_post_meta( $trip_id, '_trip_photo_locations', $photo_locations );
+
+        error_log( 'Trip Tracker: Saved ' . count( $photo_locations ) . ' photo locations' );
 
         return $photo_locations;
     }

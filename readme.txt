@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,14 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.7.0 =
+* Fixed photo timestamp matching - photos now correctly placed at route coordinates
+* Removed fallback placement - photos only appear if they have GPS or matching timestamp
+* Fresh route data fetched when processing photos (cache cleared first)
+* Added photo debug endpoint: /wp-json/trip-tracker/v1/photos/debug/{trip_id}
+* Added photo reprocess endpoint: /wp-json/trip-tracker/v1/photos/reprocess/{trip_id}
+* Extensive logging for troubleshooting photo placement
 
 = 1.6.0 =
 * Full-screen map mode - map now fills entire viewport on trip pages

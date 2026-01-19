@@ -90,6 +90,38 @@ class Trip_Tracker_REST_API {
                 ),
             ),
         ) );
+
+        // Photo debug endpoint (admin only)
+        register_rest_route( 'trip-tracker/v1', '/photos/debug/(?P<trip_id>\d+)', array(
+            'methods' => 'GET',
+            'callback' => array( $this, 'get_photo_debug' ),
+            'permission_callback' => function() {
+                return current_user_can( 'manage_options' );
+            },
+            'args' => array(
+                'trip_id' => array(
+                    'validate_callback' => function( $param ) {
+                        return is_numeric( $param );
+                    },
+                ),
+            ),
+        ) );
+
+        // Reprocess photos endpoint (admin only)
+        register_rest_route( 'trip-tracker/v1', '/photos/reprocess/(?P<trip_id>\d+)', array(
+            'methods' => 'POST',
+            'callback' => array( $this, 'reprocess_photos' ),
+            'permission_callback' => function() {
+                return current_user_can( 'edit_posts' );
+            },
+            'args' => array(
+                'trip_id' => array(
+                    'validate_callback' => function( $param ) {
+                        return is_numeric( $param );
+                    },
+                ),
+            ),
+        ) );
     }
 
     /**
@@ -347,6 +379,84 @@ class Trip_Tracker_REST_API {
             'success' => true,
             'points' => count( $route ),
             'message' => sprintf( __( 'Route refreshed with %d points.', 'trip-tracker' ), count( $route ) ),
+        ), 200 );
+    }
+
+    /**
+     * Get photo debug info (admin only).
+     */
+    public function get_photo_debug( $request ) {
+        $trip_id = $request->get_param( 'trip_id' );
+
+        $photo_ids = get_post_meta( $trip_id, '_trip_photos', true ) ?: array();
+        $photo_locations = get_post_meta( $trip_id, '_trip_photo_locations', true ) ?: array();
+
+        // Get route info
+        $traccar = new Trip_Tracker_Traccar_API();
+        $route = $traccar->get_trip_route( $trip_id );
+
+        $route_info = array(
+            'total_points' => is_array( $route ) ? count( $route ) : 0,
+            'first_timestamp' => null,
+            'last_timestamp' => null,
+        );
+
+        if ( ! empty( $route ) && is_array( $route ) ) {
+            $first = reset( $route );
+            $last = end( $route );
+            $route_info['first_timestamp'] = $first['timestamp'] ?? null;
+            $route_info['last_timestamp'] = $last['timestamp'] ?? null;
+        }
+
+        // Get EXIF info for each photo
+        $photos_debug = array();
+        foreach ( $photo_ids as $photo_id ) {
+            $exif = get_post_meta( $photo_id, '_trip_tracker_exif', true );
+            $file = get_attached_file( $photo_id );
+
+            $photos_debug[] = array(
+                'id' => $photo_id,
+                'title' => get_the_title( $photo_id ),
+                'file_exists' => $file && file_exists( $file ),
+                'exif_timestamp' => $exif['timestamp'] ?? null,
+                'exif_has_gps' => isset( $exif['latitude'] ) && isset( $exif['longitude'] ),
+                'exif_gps' => isset( $exif['latitude'] ) ? array( $exif['latitude'], $exif['longitude'] ) : null,
+            );
+        }
+
+        return new WP_REST_Response( array(
+            'trip_id' => $trip_id,
+            'route_info' => $route_info,
+            'photos_attached' => count( $photo_ids ),
+            'photos_with_locations' => count( $photo_locations ),
+            'photos_debug' => $photos_debug,
+            'stored_locations' => $photo_locations,
+        ), 200 );
+    }
+
+    /**
+     * Reprocess photos for a trip (admin only).
+     */
+    public function reprocess_photos( $request ) {
+        $trip_id = $request->get_param( 'trip_id' );
+
+        $photo_ids = get_post_meta( $trip_id, '_trip_photos', true ) ?: array();
+
+        if ( empty( $photo_ids ) ) {
+            return new WP_REST_Response( array(
+                'success' => false,
+                'message' => __( 'No photos attached to this trip.', 'trip-tracker' ),
+            ), 200 );
+        }
+
+        // Reprocess photos
+        $photo_locations = Trip_Tracker_Photos::process_trip_photos( $trip_id, $photo_ids );
+
+        return new WP_REST_Response( array(
+            'success' => true,
+            'photos_processed' => count( $photo_ids ),
+            'photos_placed' => count( $photo_locations ),
+            'locations' => $photo_locations,
         ), 200 );
     }
 }
