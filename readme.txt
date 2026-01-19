@@ -3,7 +3,7 @@ Contributors: aaronhorv
 Tags: travel, tracking, maps, gps, traccar, mapbox, trips, travel blog
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -90,6 +90,13 @@ This plugin is designed for single-user scenarios (the site owner tracking their
 5. Settings page
 
 == Changelog ==
+
+= 1.7.1 =
+* Added Photo Debug panel directly on Trip edit page
+* Shows EXIF timestamp and GPS status for each photo
+* Shows route timestamp range for comparison
+* Warns if PHP EXIF extension is not installed
+* Helps diagnose why photos aren't being placed correctly
 
 = 1.7.0 =
 * Fixed photo timestamp matching - photos now correctly placed at route coordinates

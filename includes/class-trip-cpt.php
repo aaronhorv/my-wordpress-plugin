@@ -123,6 +123,7 @@ class Trip_Tracker_CPT {
 
     public function render_trip_photos_meta_box( $post ) {
         $photos = get_post_meta( $post->ID, '_trip_photos', true ) ?: array();
+        $photo_locations = get_post_meta( $post->ID, '_trip_photo_locations', true ) ?: array();
         ?>
         <div id="trip-photos-container">
             <div id="trip-photos-list">
@@ -143,6 +144,108 @@ class Trip_Tracker_CPT {
                 <button type="button" id="add-trip-photos" class="button"><?php esc_html_e( 'Add Photos', 'trip-tracker' ); ?></button>
             </p>
             <p class="description"><?php esc_html_e( 'Photos will be placed on the map based on their EXIF timestamp.', 'trip-tracker' ); ?></p>
+
+            <?php if ( ! empty( $photos ) ) : ?>
+                <hr style="margin: 15px 0;">
+                <details>
+                    <summary style="cursor: pointer; font-weight: bold;"><?php esc_html_e( 'Photo Debug Info', 'trip-tracker' ); ?></summary>
+                    <table class="widefat" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e( 'Photo', 'trip-tracker' ); ?></th>
+                                <th><?php esc_html_e( 'EXIF Timestamp', 'trip-tracker' ); ?></th>
+                                <th><?php esc_html_e( 'EXIF GPS', 'trip-tracker' ); ?></th>
+                                <th><?php esc_html_e( 'Placed At', 'trip-tracker' ); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $photos as $photo_id ) : ?>
+                                <?php
+                                $exif = get_post_meta( $photo_id, '_trip_tracker_exif', true );
+                                $file = get_attached_file( $photo_id );
+
+                                // Try to read EXIF directly from file
+                                $raw_exif = null;
+                                if ( $file && file_exists( $file ) && function_exists( 'exif_read_data' ) ) {
+                                    $raw_exif = @exif_read_data( $file, 'EXIF', true );
+                                }
+
+                                // Find location in stored data
+                                $location = null;
+                                foreach ( $photo_locations as $loc ) {
+                                    if ( $loc['id'] == $photo_id ) {
+                                        $location = $loc;
+                                        break;
+                                    }
+                                }
+                                ?>
+                                <tr>
+                                    <td>
+                                        <?php echo esc_html( get_the_title( $photo_id ) ); ?><br>
+                                        <small>ID: <?php echo esc_html( $photo_id ); ?></small>
+                                    </td>
+                                    <td>
+                                        <?php if ( ! empty( $exif['timestamp'] ) ) : ?>
+                                            <span style="color: green;">✓</span> <?php echo esc_html( $exif['timestamp'] ); ?>
+                                        <?php elseif ( $raw_exif && ( isset( $raw_exif['EXIF']['DateTimeOriginal'] ) || isset( $raw_exif['IFD0']['DateTime'] ) ) ) : ?>
+                                            <span style="color: orange;">⚠</span> <?php echo esc_html( $raw_exif['EXIF']['DateTimeOriginal'] ?? $raw_exif['IFD0']['DateTime'] ); ?>
+                                            <br><small>(Not extracted yet - save to process)</small>
+                                        <?php else : ?>
+                                            <span style="color: red;">✗</span> <?php esc_html_e( 'No timestamp in EXIF', 'trip-tracker' ); ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ( ! empty( $exif['latitude'] ) && ! empty( $exif['longitude'] ) ) : ?>
+                                            <span style="color: green;">✓</span> <?php echo esc_html( round( $exif['latitude'], 4 ) . ', ' . round( $exif['longitude'], 4 ) ); ?>
+                                        <?php else : ?>
+                                            <span style="color: gray;">—</span> <?php esc_html_e( 'No GPS', 'trip-tracker' ); ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ( $location && ! empty( $location['latitude'] ) ) : ?>
+                                            <span style="color: green;">✓</span> <?php echo esc_html( round( $location['latitude'], 4 ) . ', ' . round( $location['longitude'], 4 ) ); ?>
+                                            <?php if ( ! empty( $location['source'] ) ) : ?>
+                                                <br><small>(<?php echo esc_html( $location['source'] ); ?>)</small>
+                                            <?php endif; ?>
+                                        <?php else : ?>
+                                            <span style="color: red;">✗</span> <?php esc_html_e( 'Not placed on map', 'trip-tracker' ); ?>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+
+                    <?php
+                    // Show route info
+                    $traccar = new Trip_Tracker_Traccar_API();
+                    $route = $traccar->get_trip_route( $post->ID );
+                    ?>
+                    <p style="margin-top: 10px;">
+                        <strong><?php esc_html_e( 'Route Info:', 'trip-tracker' ); ?></strong>
+                        <?php if ( ! empty( $route ) && is_array( $route ) ) : ?>
+                            <?php
+                            $first = reset( $route );
+                            $last = end( $route );
+                            ?>
+                            <?php echo esc_html( count( $route ) ); ?> <?php esc_html_e( 'points', 'trip-tracker' ); ?><br>
+                            <small>
+                                <?php esc_html_e( 'First:', 'trip-tracker' ); ?> <?php echo esc_html( $first['timestamp'] ?? 'no timestamp' ); ?><br>
+                                <?php esc_html_e( 'Last:', 'trip-tracker' ); ?> <?php echo esc_html( $last['timestamp'] ?? 'no timestamp' ); ?>
+                            </small>
+                        <?php else : ?>
+                            <span style="color: red;"><?php esc_html_e( 'No route data', 'trip-tracker' ); ?></span>
+                        <?php endif; ?>
+                    </p>
+
+                    <?php if ( ! function_exists( 'exif_read_data' ) ) : ?>
+                        <p style="color: red; margin-top: 10px;">
+                            <strong><?php esc_html_e( 'Warning:', 'trip-tracker' ); ?></strong>
+                            <?php esc_html_e( 'PHP EXIF extension is not installed. Photo timestamps cannot be read.', 'trip-tracker' ); ?>
+                        </p>
+                    <?php endif; ?>
+                </details>
+            <?php endif; ?>
         </div>
         <?php
     }
